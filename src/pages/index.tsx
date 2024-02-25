@@ -43,11 +43,11 @@ const PostView = (props: PostWithUser) => {
         height={50}
       />
       <div className="flex flex-col">
-        <div className="flex-slate-300 flex  gap-3">
-          <span>{`@${author.username}`}</span>
-          <span>{`${dayjs(post.createdAt).fromNow()}`}</span>
+        <div className=" flex  gap-3">
+          <span className=" text-slate-200">{`@${author.username}`}</span>
+          <span className=" text-slate-500">{`${dayjs(post.createdAt).fromNow()}`}</span>
         </div>
-        <span>{post.content}</span>
+        <span className=" text-slate-50">{post.content}</span>
       </div>
     </div>
   );
@@ -56,7 +56,7 @@ const PostView = (props: PostWithUser) => {
 const Feed = () => {
   const { data, isLoading: postsLoading } = api.post.getAll.useQuery();
   
-  if (postsLoading) return <LoadingPage />;
+  if (postsLoading) return <LoadingPage size={40}/>;
   if (!data) return <div> Something went wrong</div>;
   return(
   <div className="flex flex-col">
