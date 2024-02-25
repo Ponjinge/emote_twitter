@@ -7,57 +7,67 @@ import { SignIn } from "@clerk/nextjs";
 import { number } from "zod";
 import relativeTime from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
+import { LoadingPage } from "~/components/loading";
 dayjs.extend(relativeTime);
 
-export default function Home() {
-  const user = useUser();
-  const { data, isLoading } = api.post.getAll.useQuery();
+const CreatePostWizard = () => {
+  const { user } = useUser();
+  if (!user) return null;
+  return (
+    <div className=" flex w-full gap-4 ">
+      <Image
+        src={user.imageUrl}
+        alt={`@${user.username} Github"`}
+        className=" rounded-full"
+        width={56}
+        height={56}
+      />
+      <input
+        placeholder="Post some pigs"
+        className=" grow bg-transparent outline-none"
+      />
+    </div>
+  );
+};
 
-  if (isLoading) return <div> Loading... </div>;
-  if (!data) return <div> Something went wrong</div>;
-
-  const CreatePostWizard = () => {
-    const { user } = useUser();
-    if (!user) return null;
-    return (
-      <div className=" flex w-full gap-4 ">
-        <Image
-          src={user.imageUrl}
-          alt={`@${user.username} Github"`}
-          className=" rounded-full"
-          width={56}
-          height={56}
-        />
-        <input
-          placeholder="Post some pigs"
-          className=" grow bg-transparent outline-none"
-        />
-      </div>
-    );
-  };
-
-  type PostWithUser = RouterOutputs["post"]["getAll"][number];
-  const PostView = (props: PostWithUser) => {
-    const { post, author } = props;
-    return (
-      <div key={post.id} className="flex gap-5 border-b border-slate-300  p-8 ">
-        <Image
-          src={author.imageUrl}
-          alt={`@${author.username} Github pfp"`}
-          className="rounded-full"
-          width={50}
-          height={50}
-        />
-        <div className="flex flex-col">
-          <div className="flex-slate-300 flex  gap-3">
-            <span>{`@${author.username}`}</span>
-            <span>{`${dayjs(post.createdAt).fromNow()}`}</span>
-          </div>
-          <span>{post.content}</span>
+type PostWithUser = RouterOutputs["post"]["getAll"][number];
+const PostView = (props: PostWithUser) => {
+  const { post, author } = props;
+  return (
+    <div key={post.id} className="flex gap-5 border-b border-slate-300  p-8 ">
+      <Image
+        src={author.imageUrl}
+        alt={`@${author.username} Github pfp"`}
+        className="rounded-full"
+        width={50}
+        height={50}
+      />
+      <div className="flex flex-col">
+        <div className="flex-slate-300 flex  gap-3">
+          <span>{`@${author.username}`}</span>
+          <span>{`${dayjs(post.createdAt).fromNow()}`}</span>
         </div>
+        <span>{post.content}</span>
       </div>
-    );
-  };
+    </div>
+  );
+};
+
+const Feed = () => {
+  const { data, isLoading: postsLoading } = api.post.getAll.useQuery();
+  
+  if (postsLoading) return <LoadingPage />;
+  if (!data) return <div> Something went wrong</div>;
+  return(
+  <div className="flex flex-col">
+    {data?.map((fullPost) => <PostView {...fullPost} key={fullPost.post.id} />)}
+  </div>);
+};
+
+export default function Home() {
+  const {isLoaded: userLoaded, isSignedIn} = useUser();
+  
+  if (!userLoaded) return <LoadingPage size={56}/>;
 
   return (
     <>
@@ -71,15 +81,10 @@ export default function Home() {
         <div className="h-full w-full border-x border-slate-200 bg-slate-200 md:max-w-2xl">
           <div className="flex  border-b border-slate-200 p-8">
             {" "}
-            {!user.isSignedIn && <SignIn />}
-            {user.isSignedIn && <CreatePostWizard />}
+            {!isSignedIn && <SignIn />}
+            {isSignedIn && <CreatePostWizard />}
           </div>
-
-          <div className="flex flex-col">
-            {data?.map((fullPost) => (
-              <PostView {...fullPost} key={fullPost.post.id} />
-            ))}
-          </div>
+          <Feed />
         </div>
       </main>
     </>
