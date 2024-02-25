@@ -1,12 +1,15 @@
 import Head from "next/head";
-import Link from "next/link";
-
+import Image from "next/image";
 import { api } from "~/utils/api";
-import { SignOutButton, useUser } from "@clerk/nextjs";
+import type { RouterOutputs } from "~/utils/api";
+import { useUser } from "@clerk/nextjs";
 import { SignIn } from "@clerk/nextjs";
+import { number } from "zod";
+import relativeTime from "dayjs/plugin/relativeTime";
+import dayjs from "dayjs";
+dayjs.extend(relativeTime);
 
 export default function Home() {
-  const hello = api.post.hello.useQuery({ text: "from tRPC" });
   const user = useUser();
   const { data, isLoading } = api.post.getAll.useQuery();
 
@@ -17,13 +20,41 @@ export default function Home() {
     const { user } = useUser();
     if (!user) return null;
     return (
-      <div className=" flex gap-4 w-full ">
-        <img
+      <div className=" flex w-full gap-4 ">
+        <Image
           src={user.imageUrl}
-          alt="Github pfp"
-          className="h-12 w-12 rounded-full"
+          alt={`@${user.username} Github"`}
+          className=" rounded-full"
+          width={56}
+          height={56}
         />
-        <input placeholder="Post some pigs" className=" bg-transparent grow outline-none" />
+        <input
+          placeholder="Post some pigs"
+          className=" grow bg-transparent outline-none"
+        />
+      </div>
+    );
+  };
+
+  type PostWithUser = RouterOutputs["post"]["getAll"][number];
+  const PostView = (props: PostWithUser) => {
+    const { post, author } = props;
+    return (
+      <div key={post.id} className="flex gap-5 border-b border-slate-300  p-8 ">
+        <Image
+          src={author.imageUrl}
+          alt={`@${author.username} Github pfp"`}
+          className="rounded-full"
+          width={50}
+          height={50}
+        />
+        <div className="flex flex-col">
+          <div className="flex-slate-300 flex  gap-3">
+            <span>{`@${author.username}`}</span>
+            <span>{`${dayjs(post.createdAt).fromNow()}`}</span>
+          </div>
+          <span>{post.content}</span>
+        </div>
       </div>
     );
   };
@@ -45,10 +76,8 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col">
-            {data?.map((post) => (
-              <div key={post.id} className="border-b border-slate-300 p-8">
-                {post.content}
-              </div>
+            {data?.map((fullPost) => (
+              <PostView {...fullPost} key={fullPost.post.id} />
             ))}
           </div>
         </div>
